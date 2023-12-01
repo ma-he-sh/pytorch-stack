@@ -6,6 +6,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 WORKDIR /opt/build
 
 RUN set -ex \
+    && git vim curl
+
+RUN set -ex \
     && apt-get -qq update \
     && apt-get install -y --no-install-recommends \
         build-essential cmake \
@@ -88,3 +91,27 @@ RUN set -ex \
         python3-dev \
     && apt-get -qq autoremove \
     && apt-get -qq clean
+
+
+WORKDIR /src
+ARG PYTHON_VERSION=3.10.12
+
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
+
+RUN curl https://pyenv.run | bash
+ENV PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
+
+RUN pyenv install $PYTHON_VERSION && \
+    pyenv global $PYTHON_VERSION && \
+    pyenv rehash && \
+    pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir \
+    datasets
+
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+RUN pip install pandas matplotlib tqdm scikit-learn scikit-image numpy scipy h5py tensorflow
+
+ENTRPOINT ["python3"]
